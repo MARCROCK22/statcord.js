@@ -1,3 +1,4 @@
+//@ts-check
 // Modules
 const fetch = require("node-fetch");
 const si = require("systeminformation");
@@ -7,15 +8,8 @@ class Statcord extends EventEmitter {
     constructor(options) {
         super();
 
-        const { key, client } = options;
+        const { key, client, methods } = options;
         let { postCpuStatistics, postMemStatistics, postNetworkStatistics } = options;
-        
-        // Check for discord.js
-        try {
-            this.discord = require("discord.js");
-        } catch(e) {
-            throw new Error("statcord.js needs discord.js to function");
-        }
 
         // Key error handling
         if (!key) throw new Error('"key" is missing or undefined');
@@ -23,7 +17,6 @@ class Statcord extends EventEmitter {
         if (!key.startsWith("statcord.com-")) throw new Error('"key" is not prefixed by "statcord.com-", please follow the key format');
         // Client error handling
         if (!client) throw new Error('"client" is missing or undefined');
-        if (!(client instanceof this.discord.Client)) throw new TypeError('"client" is not a discord.js client');
         // Post arg error checking
         if (postCpuStatistics == null || postCpuStatistics == undefined) postCpuStatistics = true;
         if (typeof postCpuStatistics !== "boolean") throw new TypeError('"postCpuStatistics" is not of type boolean');
@@ -39,6 +32,7 @@ class Statcord extends EventEmitter {
         this.baseApiUrl = "https://api.statcord.com/v3/stats";
         this.key = key;
         this.client = client;
+        this.methods = methods;
 
         // General config
         this.activeUsers = [];
@@ -54,12 +48,6 @@ class Statcord extends EventEmitter {
         // Create custom fields map
         this.customFields = new Map();
 
-        // Check for sharding
-        if (this.client.shard) {
-            this.sharding = true;
-
-            throw new Error("Please use the statcord sharding client if you wish to use shards");
-        } else this.sharding = false;
     }
 
     /**
@@ -67,8 +55,6 @@ class Statcord extends EventEmitter {
      * @returns {Promise<boolean | Error>} returns false if there was no error, returns an error if there was.
      */
     async post() {
-        // Non-Sharding client
-        if (this.sharding) return new Error("Please use the statcord sharding client if you wish to use shards");
 
         let bandwidth = 0;
 
@@ -83,8 +69,8 @@ class Statcord extends EventEmitter {
         }
 
         // counts
-        let guild_count = this.client.guilds.cache.size;
-        let user_count = this.client.guilds.cache.filter(guild => guild.available).reduce((prev, curr) => prev + curr.memberCount, 0);
+        let guild_count = this.methods.getGuildCount(this.client);
+        let user_count = this.methods.getUserCount(this.client);
 
         // Get and sort popular commands
         let popular = [];
@@ -126,7 +112,7 @@ class Statcord extends EventEmitter {
 
         // Post data
         let requestBody = {
-            id: this.client.user.id, // Client id
+            id: this.methods.getClientId(this.client), // Client id
             key: this.key, // API key
             servers: guild_count.toString(), // Server count
             users: user_count.toString(), // User count
@@ -155,7 +141,7 @@ class Statcord extends EventEmitter {
         this.activeUsers = [];
         this.commandsRun = 0;
         this.popularCommands = [];
-        
+
         // Create post request
         let response;
         try {
@@ -176,7 +162,7 @@ class Statcord extends EventEmitter {
             }
 
             return;
-        } 
+        }
 
         // Server error on statcord
         if (response.status >= 500) {
@@ -208,11 +194,9 @@ class Statcord extends EventEmitter {
 
     // Auto posting
     async autopost() {
-        // Non-Sharding client
-        if (this.sharding) throw new Error("Please use the statcord sharding client if you wish to use shards");
 
         let post = await this.post(); // Create first post
-    
+
         // set interval to post every hour
         setInterval(
             async () => {
@@ -232,8 +216,6 @@ class Statcord extends EventEmitter {
 
     // Post stats about a command
     async postCommand(command_name, author_id) {
-        // Non-Sharding client
-        if (this.sharding) throw new Error("Please use the statcord sharding client if you wish to use shards");
 
         // Command name error checking
         if (!command_name) throw new Error('"command_name" is missing or undefined');
@@ -276,5 +258,7 @@ class Statcord extends EventEmitter {
         this.customFields.set(customFieldNumber, handler);
     }
 }
+
+Statcord.Client = undefined;
 
 module.exports = Statcord;

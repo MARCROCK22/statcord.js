@@ -15,9 +15,6 @@
     "node-fetch": "^2.6.0",
     "systeminformation": "^5.7.12"
   },
-  "devDependencies": {
-    "discord.js": "^12.4.1"
-  },
   "repository": {
     "type": "git",
     "url": "https://github.com/labdiscord/statcord.js"
