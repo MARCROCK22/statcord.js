@@ -59,9 +59,9 @@ declare module "statcord.js" {
 
         private customFields: Map<1 | 2, (manager: T) => Promise<string>>;
         public methods: {
-            getGuildCount: (client: T) => Promise<number> | number;
-            getUserCount: (client: T) => Promise<number> | number;
-            getClientId: (client: T) => Promise<string> | string;
+            getGuildCount: (client: T) => Promise<string | number> | number | string;
+            getUserCount: (client: T) => Promise<string | number> | number | string;
+            getClientId: (client: T) => Promise<string | number> | number | string;
         }
         public autopost(): Promise<boolean | Error>;
         public post(): Promise<boolean | Error>;

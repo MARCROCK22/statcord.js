@@ -69,8 +69,8 @@ class Statcord extends EventEmitter {
         }
 
         // counts
-        let guild_count = this.methods.getGuildCount(this.client);
-        let user_count = this.methods.getUserCount(this.client);
+        let guild_count = await this.methods.getGuildCount(this.client);
+        let user_count = await this.methods.getUserCount(this.client);
 
         // Get and sort popular commands
         let popular = [];
@@ -112,7 +112,7 @@ class Statcord extends EventEmitter {
 
         // Post data
         let requestBody = {
-            id: this.methods.getClientId(this.client), // Client id
+            id: await this.methods.getClientId(this.client), // Client id
             key: this.key, // API key
             servers: guild_count.toString(), // Server count
             users: user_count.toString(), // User count
